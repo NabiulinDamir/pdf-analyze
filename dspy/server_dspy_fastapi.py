@@ -39,3 +39,47 @@ class ExtractSignature(dspy.Signature):
 ExtractionTasks = dspy.Predict(ExtractSignature)
 
 # --- добавить FastAPI  ---
+app = FastAPI(
+    title="Task Extraction API",
+    description="Extract structured tasks from unstructured documents using LLM.",
+    version="0.2"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- запрос/ответ ---
+class ProcessingRequest(BaseModel):
+    document: str = Field(..., description="The input document text to extract tasks from")
+
+class ProcessingResponse(BaseModel):
+    status: str
+    result: Optional[dict] = None
+
+# --- Роуты ---
+@app.post(
+    "/api/processing",
+    response_model=ProcessingResponse,
+    summary="Extract tasks from a document",
+    description="Takes a document string and returns a list of structured tasks."
+)
+async def processing(request: ProcessingRequest):
+    try:
+        res = ExtractionTasks(document=request.document)
+        tasks_as_lists = [[t.formulation, t.responsible_executors, t.deadline, t.item_number] for t in res.tasks]
+        
+        return ProcessingResponse(
+            status="done",
+            result={"tasks": tasks_as_lists}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"The following exception is occurred: {str(e)}.")
+
+@app.get("/", summary="Health check")
+async def root():
+    return {"status": "ok"} 
