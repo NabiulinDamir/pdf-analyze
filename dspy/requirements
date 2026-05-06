@@ -1,0 +1,5 @@
+dspy==2.6.24
+fastapi==0.124.2
+pydantic==2.12.5
+python-dotenv==1.2.1
+uvicorn==0.38.0
