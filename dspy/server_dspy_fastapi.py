@@ -11,6 +11,7 @@ import os
 load_dotenv()
 
 lm = dspy.LM(
+    "openai/somemodel-instruct",
     api_base=os.getenv("OPENAI_URL"),
     api_key="local",
     max_tokens=32000,
@@ -19,26 +20,26 @@ lm = dspy.LM(
 )
 dspy.configure(lm=lm)
 
-class Task(BaseModel):
-    formulation: str = Field(..., description="")
-    responsible_executors: str = Field(..., description="")
-    deadline: Optional[str] = Field(None, pattern="", description="")
-    item_number: Optional[str] = Field(None, description="")
+# class Task(BaseModel):
+#     formulation: str = Field(..., description="The task description")
+#     responsible_executors: str = Field(..., description="Names of departments or persons responsible")
+#     deadline: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$", description="Deadline in yyyy-mm-dd format")
+#     item_number: Optional[str] = Field(None, description="Item number from the document")
 
 Task = namedtuple('Task', ['formulation', 'responsible_executors', 'deadline', 'item_number'])
 
 prompt = os.getenv("INSTRUCTIONS")
 
-# промпт = """Extract the formulations of the tasks, their responsible executors, associated deadlines, and item numbers from the document. Responsible executors can be represented as the names of departments or persons. If you are unsure about any field, leave it empty. Format all dates as yyyy-mm-dd."""
+# prompt = """Extract the formulations of the tasks, their responsible executors, associated deadlines, and item numbers from the document. Responsible executors can be represented as the names of departments or persons. If you are unsure about any field, leave it empty. Format all dates as yyyy-mm-dd."""
 
 class ExtractSignature(dspy.Signature):
+    #"""Extract the formulations of the tasks, their responsible executors, associated deadlines, and item numbers from the document. Responsible executors can be represented as the names of departments or persons. If you are unsure about any field, leave it empty. Format all dates as yyyy-mm-dd."""
     __doc__ = prompt
     document: str = dspy.InputField()
     tasks: List[Task] = dspy.OutputField()
 
 ExtractionTasks = dspy.Predict(ExtractSignature)
 
-# --- добавить FastAPI  ---
 app = FastAPI(
     title="Task Extraction API",
     description="Extract structured tasks from unstructured documents using LLM.",
@@ -71,11 +72,12 @@ class ProcessingResponse(BaseModel):
 async def processing(request: ProcessingRequest):
     try:
         res = ExtractionTasks(document=request.document)
-        tasks_as_lists = [[t.formulation, t.responsible_executors, t.deadline, t.item_number] for t in res.tasks]
+        #tasks_as_lists = [[t.formulation, t.responsible_executors, t.deadline, t.item_number] for t in res.tasks]
         
         return ProcessingResponse(
             status="done",
-            result={"tasks": tasks_as_lists}
+            #result={"tasks": tasks_as_lists}
+            result = {"tasks":[[el for el in t] for t in res['tasks']]}
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"The following exception is occurred: {str(e)}.")
