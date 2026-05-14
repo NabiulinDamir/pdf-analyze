@@ -1,11 +1,8 @@
 import { Module } from '@nestjs/common';
 import { OcrService } from './ocr.service';
 
-
 @Module({
   providers: [OcrService],
-  exports: [OcrService]
+  exports: [OcrService],
 })
-export class OcrModule {
-  
-}
+export class OcrModule {}

@@ -41,19 +41,23 @@ export class DatabaseService {
   }
 
   private writeData(data: DocumentRecord[]): void {
-    const serializableData = data.map(doc => ({
+    const serializableData = data.map((doc) => ({
       ...doc,
       updated: new Date().toISOString(),
     }));
-    fs.writeFileSync(this.filePath, JSON.stringify(serializableData, null, 2), 'utf8');
+    fs.writeFileSync(
+      this.filePath,
+      JSON.stringify(serializableData, null, 2),
+      'utf8',
+    );
   }
 
-  async addFileToDB(id: string, file: Express.Multer.File) {
+  addFileToDB(id: string, file: Express.Multer.File) {
     const data = this.readData();
-    const existingIndex = data.findIndex(doc => doc.id === id);
+    const existingIndex = data.findIndex((doc) => doc.id === id);
 
     if (existingIndex !== -1 && data[existingIndex].error) {
-      data[existingIndex] = {id: id, updated: new Date()}
+      data[existingIndex] = { id: id, updated: new Date() };
     } else {
       data.push({
         id,
@@ -65,16 +69,19 @@ export class DatabaseService {
     this.writeData(data);
   }
 
-  async addParsedFileToDB(id: string, parsed: { output: string | null; error: string | null }) {
+  addParsedFileToDB(
+    id: string,
+    parsed: { output: string | null; error: string | null },
+  ) {
     const data = this.readData();
-    const existingIndex = data.findIndex(doc => doc.id === id);
-  
+    const existingIndex = data.findIndex((doc) => doc.id === id);
+
     if (existingIndex === -1) {
       return;
     }
-  
+
     const doc = data[existingIndex];
-  
+
     if (parsed.error) {
       doc.parsed = '';
       doc.error = parsed.error;
@@ -84,27 +91,27 @@ export class DatabaseService {
       doc.parsed = '';
       doc.error = DbMessages.missingOutputAndError;
     }
-  
+
     doc.updated = new Date();
     this.writeData(data);
   }
 
-  async addProcessedFileToDB(id: string, processed: Task[]) {
+  addProcessedFileToDB(id: string, processed: Task[]) {
     const data = this.readData();
-    const existingIndex = data.findIndex(doc => doc.id === id);
+    const existingIndex = data.findIndex((doc) => doc.id === id);
 
     if (existingIndex !== -1) {
       data[existingIndex].processed = processed;
-      data[existingIndex].error = undefined;
+      data[existingIndex].error = undefined; // сброс ошибки
       data[existingIndex].updated = new Date();
     }
 
     this.writeData(data);
   }
 
-  async addErrorToDB(id: string, error: string) {
+  addErrorToDB(id: string, error: string) {
     const data = this.readData();
-    const existingIndex = data.findIndex(doc => doc.id === id);
+    const existingIndex = data.findIndex((doc) => doc.id === id);
 
     if (existingIndex !== -1) {
       data[existingIndex].error = error;
@@ -114,9 +121,9 @@ export class DatabaseService {
     this.writeData(data);
   }
 
-  async getFromDB(id: string) {
+  getFromDB(id: string) {
     const data = this.readData();
-    const document = data.find(doc => doc.id === id);
+    const document = data.find((doc) => doc.id === id);
 
     if (!document) {
       return {
@@ -155,9 +162,9 @@ export class DatabaseService {
     };
   }
 
-  async delete(id: string) {
-    const data = this.readData()
-    const filteredData = data.filter(doc => doc.id !== id);
+  delete(id: string) {
+    const data = this.readData();
+    const filteredData = data.filter((doc) => doc.id !== id);
     this.writeData(filteredData);
   }
 }
